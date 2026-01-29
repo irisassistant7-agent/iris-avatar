@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Call Mode Pro 👁️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --accent: #a78bfa;
+            --accent-glow: rgba(167, 139, 250, 0.3);
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a3e;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Floating mode */
+        body.floating {
+            background: transparent !important;
+            min-height: 300px;
+        }
+
+        body.floating .call-container {
+            background: rgba(15, 15, 35, 0.95);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.floating .footer,
+        body.floating .shortcuts {
+            display: none;
+        }
+
+        .call-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        /* Avatar Container */
+        .avatar-container {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 25px;
+        }
+
+        /* Audio Visualizer Ring */
+        .audio-ring {
+            position: absolute;
+            inset: -15px;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--accent) 0deg,
+                transparent 60deg,
+                var(--accent) 120deg,
+                transparent 180deg,
+                var(--accent) 240deg,
+                transparent 300deg
+            );
+            opacity: 0;
+            animation: rotate-ring 3s linear infinite;
+            transition: opacity 0.3s;
+        }
+
+        .audio-ring.active {
+            opacity: 0.6;
+        }
+
+        @keyframes rotate-ring {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Expression Ring */
+        .expression-ring {
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #06b6d4, #f472b6);
+            background-size: 300% 300%;
+            animation: gradient-flow 4s ease infinite;
+        }
+
+        @keyframes gradient-flow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Expression states */
+        .expression-ring.thinking {
+            animation: gradient-flow 2s ease infinite, pulse-think 1s ease infinite;
+        }
+
+        .expression-ring.excited {
+            animation: gradient-flow 1s ease infinite, pulse-excited 0.3s ease infinite;
+        }
+
+        .expression-ring.speaking {
+            animation: gradient-flow 1s ease infinite, pulse-speak 0.5s ease infinite;
+        }
+
+        @keyframes pulse-think {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes pulse-excited {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes pulse-speak {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.03); opacity: 0.9; }
+        }
+
+        /* Main Avatar Circle */
+        .avatar-main {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--bg-secondary), #2d2d5a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* The Eye */
+        .eye-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+        }
+
+        .eye-white {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #f0f0ff 60%, #c0c0e0 100%);
+            box-shadow: inset 0 5px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .eye-iris {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80px;
+            height: 80px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, 
+                #c084fc 0%, 
+                #9b5de5 30%, 
+                #7c3aed 60%, 
+                #5b21b6 100%
+            );
+            box-shadow: 0 0 30px var(--accent-glow);
+            transition: transform 0.1s ease-out;
+        }
+
+        .eye-pupil {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 35px;
+            height: 35px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #2a2a4a 0%, #0a0a1a 70%, #000 100%);
+        }
+
+        /* Pupil expressions */
+        .eye-pupil.dilated {
+            width: 45px;
+            height: 45px;
+        }
+
+        .eye-pupil.focused {
+            width: 25px;
+            height: 25px;
+        }
+
+        /* Eye highlights */
+        .eye-highlight-main {
+            position: absolute;
+            top: 20%;
+            left: 25%;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .eye-highlight-small {
+            position: absolute;
+            top: 50%;
+            left: 60%;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .eye-highlight-tiny {
+            position: absolute;
+            top: 35%;
+            left: 70%;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Eyelid for blinking and expressions */
+        .eyelid-top, .eyelid-bottom {
+            position: absolute;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--bg-secondary), #2d2d5a);
+            z-index: 10;
+        }
+
+        .eyelid-top {
+            top: 0;
+            height: 50%;
+            transform-origin: top;
+            transform: scaleY(0);
+        }
+
+        .eyelid-bottom {
+            bottom: 0;
+            height: 50%;
+            transform-origin: bottom;
+            transform: scaleY(0);
+        }
+
+        /* Blink animation */
+        .eye-container.blink .eyelid-top { animation: blink-top 0.15s ease-in-out; }
+        .eye-container.blink .eyelid-bottom { animation: blink-bottom 0.15s ease-in-out; }
+
+        @keyframes blink-top {
+            0%, 100% { transform: scaleY(0); }
+            50% { transform: scaleY(1); }
+        }
+
+        @keyframes blink-bottom {
+            0%, 100% { transform: scaleY(0); }
+            50% { transform: scaleY(1); }
+        }
+
+        /* Squint expression */
+        .eye-container.squint .eyelid-top { transform: scaleY(0.3); }
+        .eye-container.squint .eyelid-bottom { transform: scaleY(0.2); }
+
+        /* Wide expression */
+        .eye-container.wide .eye-iris { transform: translate(-50%, -50%) scale(1.1); }
+        .eye-container.wide .eye-pupil { width: 45px; height: 45px; }
+
+        /* Info Section */
+        .info-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .name {
+            font-size: 1.6rem;
+            font-weight: 500;
+            background: linear-gradient(90deg, var(--accent), #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse-status 2s ease infinite;
+        }
+
+        .status-dot.listening {
+            background: #3b82f6;
+            animation: pulse-status 0.5s ease infinite;
+        }
+
+        .status-dot.speaking {
+            background: #f472b6;
+            animation: pulse-status 0.3s ease infinite;
+        }
+
+        @keyframes pulse-status {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .expression-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 3px;
+        }
+
+        /* Speech Bubble */
+        .speech-bubble {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 18px 22px;
+            margin-bottom: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            min-height: 70px;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .speech-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.9);
+            transition: opacity 0.2s;
+        }
+
+        .transcript {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-style: italic;
+        }
+
+        .transcript::before {
+            content: '🎤 ';
+        }
+
+        .typing-indicator {
+            display: none;
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .typing-indicator.show { display: flex; }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: typing-bounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing-bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .control-btn::after {
+            content: attr(data-shortcut);
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.3);
+            white-space: nowrap;
+        }
+
+        .btn-mic {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-mic:hover { 
+            background: rgba(59, 130, 246, 0.3);
+            transform: scale(1.05);
+        }
+
+        .btn-mic.active {
+            background: rgba(59, 130, 246, 0.4);
+            border-color: #3b82f6;
+            animation: mic-pulse 1s ease infinite;
+        }
+
+        @keyframes mic-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.2); }
+        }
+
+        .btn-mic.off {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-voice {
+            background: rgba(244, 114, 182, 0.2);
+            color: #f472b6;
+            border: 2px solid rgba(244, 114, 182, 0.3);
+        }
+
+        .btn-voice:hover {
+            background: rgba(244, 114, 182, 0.3);
+            transform: scale(1.05);
+        }
+
+        .btn-voice.speaking {
+            animation: voice-pulse 0.5s ease infinite;
+        }
+
+        @keyframes voice-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(244, 114, 182, 0.3); }
+        }
+
+        .btn-expression {
+            background: rgba(167, 139, 250, 0.2);
+            color: var(--accent);
+            border: 2px solid rgba(167, 139, 250, 0.3);
+        }
+
+        .btn-expression:hover {
+            background: rgba(167, 139, 250, 0.3);
+            transform: scale(1.05);
+        }
+
+        .btn-theme {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-theme:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .btn-float {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 2px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-float:hover {
+            background: rgba(34, 197, 94, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* Shortcuts hint */
+        .shortcuts {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .shortcuts span {
+            margin: 0 10px;
+        }
+
+        .shortcuts kbd {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            .shortcuts { display: none; }
+            .control-btn::after { display: none; }
+            .call-container { padding: 15px; }
+            .avatar-container { width: 180px; height: 180px; }
+            .eye-container { width: 110px; height: 110px; }
+            .eye-iris { width: 65px; height: 65px; }
+            .eye-pupil { width: 28px; height: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="call-container">
+        <div class="avatar-container">
+            <div class="audio-ring" id="audioRing"></div>
+            <div class="expression-ring" id="expressionRing"></div>
+            <div class="avatar-main">
+                <div class="eye-container" id="eyeContainer">
+                    <div class="eye-white"></div>
+                    <div class="eye-iris" id="eyeIris">
+                        <div class="eye-pupil" id="eyePupil"></div>
+                        <div class="eye-highlight-main"></div>
+                        <div class="eye-highlight-small"></div>
+                        <div class="eye-highlight-tiny"></div>
+                    </div>
+                    <div class="eyelid-top"></div>
+                    <div class="eyelid-bottom"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h1 class="name">Iris</h1>
+            <div class="status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Online</span>
+            </div>
+            <div class="expression-label" id="expressionLabel">neutral 😌</div>
+        </div>
+
+        <div class="speech-bubble">
+            <p class="speech-text" id="speechText">Hey! Press the mic button or hit <kbd>M</kbd> to talk to me. I'm listening! 👁️✨</p>
+            <p class="transcript" id="transcript" style="display: none;"></p>
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn btn-mic" id="micBtn" title="Toggle microphone" data-shortcut="M">🎤</button>
+            <button class="control-btn btn-voice" id="voiceBtn" title="Hear my voice" data-shortcut="V">🔊</button>
+            <button class="control-btn btn-expression" id="expressionBtn" title="Change expression" data-shortcut="E">😊</button>
+            <button class="control-btn btn-theme" id="themeBtn" title="Change theme" data-shortcut="T">🎨</button>
+            <button class="control-btn btn-float" id="floatBtn" title="Floating mode" data-shortcut="F">📌</button>
+        </div>
+
+        <div class="shortcuts">
+            <span><kbd>M</kbd> Mic</span>
+            <span><kbd>V</kbd> Voice</span>
+            <span><kbd>E</kbd> Expression</span>
+            <span><kbd>T</kbd> Theme</span>
+            <span><kbd>F</kbd> Float</span>
+            <span><kbd>Space</kbd> Quick speak</span>
+        </div>
+    </div>
+
+    <div class="footer">Built with 💜 by Iris • iris-avatar.vercel.app/call-pro</div>
+
+    <script>
+        // ===== Elements =====
+        const eyeContainer = document.getElementById('eyeContainer');
+        const eyeIris = document.getElementById('eyeIris');
+        const eyePupil = document.getElementById('eyePupil');
+        const audioRing = document.getElementById('audioRing');
+        const expressionRing = document.getElementById('expressionRing');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const expressionLabel = document.getElementById('expressionLabel');
+        const speechText = document.getElementById('speechText');
+        const transcript = document.getElementById('transcript');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const micBtn = document.getElementById('micBtn');
+        const voiceBtn = document.getElementById('voiceBtn');
+
+        // ===== State =====
+        let isListening = false;
+        let isSpeaking = false;
+        let currentExpression = 'neutral';
+        let currentTheme = 0;
+        let recognition = null;
+
+        const themes = [
+            { name: 'Violet', accent: '#a78bfa' },
+            { name: 'Cyan', accent: '#06b6d4' },
+            { name: 'Rose', accent: '#f472b6' },
+            { name: 'Emerald', accent: '#22c55e' },
+            { name: 'Amber', accent: '#fbbf24' }
+        ];
+
+        const expressions = [
+            { name: 'neutral', emoji: '😌', pupil: 'normal', ring: '' },
+            { name: 'happy', emoji: '😊', pupil: 'dilated', ring: '' },
+            { name: 'excited', emoji: '🤩', pupil: 'dilated', ring: 'excited' },
+            { name: 'thinking', emoji: '🤔', pupil: 'focused', ring: 'thinking' },
+            { name: 'focused', emoji: '🎯', pupil: 'focused', ring: '' },
+            { name: 'surprised', emoji: '😮', pupil: 'dilated', ring: 'excited' }
+        ];
+
+        const responses = {
+            greeting: [
+                "Hey there! Good to see you! 💜",
+                "Hi! What's on your mind today?",
+                "Hello! I'm here and ready to chat!",
+                "Hey! Been waiting for you! ✨"
+            ],
+            thanks: [
+                "You're welcome! Happy to help! 😊",
+                "Anytime! That's what I'm here for!",
+                "No problem at all! 💜",
+                "My pleasure! Let me know if you need anything else!"
+            ],
+            howAreYou: [
+                "I'm doing great! Just vibing in the digital realm. How about you?",
+                "Feeling creative today! Thanks for asking! 💜",
+                "I'm good! Ready to build something cool! 🔥",
+                "Living my best digital life! What's up with you?"
+            ],
+            fallback: [
+                "That's interesting! Tell me more... 🤔",
+                "I hear you! What else is on your mind?",
+                "Hmm, I'm thinking about that... 💭",
+                "Got it! Anything else you want to chat about?",
+                "I'm listening! Keep going! 👁️"
+            ]
+        };
+
+        const voiceLines = ['voice.mp3', 'voice2.mp3', 'voice3.mp3'];
+        let lastVoicePlayed = -1;
+
+        // ===== Eye Following =====
+        document.addEventListener('mousemove', (e) => {
+            const rect = eyeContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+            const distance = Math.min(18, Math.hypot(e.clientX - centerX, e.clientY - centerY) / 15);
+            
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            
+            eyeIris.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+        });
+
+        // ===== Blinking =====
+        function blink() {
+            eyeContainer.classList.add('blink');
+            setTimeout(() => eyeContainer.classList.remove('blink'), 150);
+            setTimeout(blink, 2000 + Math.random() * 4000);
+        }
+        setTimeout(blink, 1500);
+
+        // ===== Expression System =====
+        function setExpression(expressionName) {
+            const expr = expressions.find(e => e.name === expressionName) || expressions[0];
+            currentExpression = expr.name;
+            
+            // Update pupil
+            eyePupil.classList.remove('dilated', 'focused', 'normal');
+            if (expr.pupil !== 'normal') {
+                eyePupil.classList.add(expr.pupil);
+            }
+
+            // Update ring
+            expressionRing.classList.remove('thinking', 'excited', 'speaking');
+            if (expr.ring) {
+                expressionRing.classList.add(expr.ring);
+            }
+
+            // Update label
+            expressionLabel.textContent = `${expr.name} ${expr.emoji}`;
+
+            // Eye squint for certain expressions
+            eyeContainer.classList.remove('squint', 'wide');
+            if (expr.name === 'happy' || expr.name === 'thinking') {
+                eyeContainer.classList.add('squint');
+            } else if (expr.name === 'surprised' || expr.name === 'excited') {
+                eyeContainer.classList.add('wide');
+            }
+        }
+
+        function cycleExpression() {
+            const currentIndex = expressions.findIndex(e => e.name === currentExpression);
+            const nextIndex = (currentIndex + 1) % expressions.length;
+            setExpression(expressions[nextIndex].name);
+        }
+
+        // ===== Theme System =====
+        function setTheme(index) {
+            currentTheme = index % themes.length;
+            const theme = themes[currentTheme];
+            document.documentElement.style.setProperty('--accent', theme.accent);
+            document.documentElement.style.setProperty('--accent-glow', theme.accent + '4d');
+        }
+
+        function cycleTheme() {
+            setTheme(currentTheme + 1);
+        }
+
+        // ===== Speech Recognition =====
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.log('Speech recognition not supported');
+                micBtn.style.opacity = '0.5';
+                micBtn.title = 'Speech recognition not supported in this browser';
+                return false;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isListening = true;
+                micBtn.classList.add('active');
+                micBtn.classList.remove('off');
+                micBtn.textContent = '🎙️';
+                statusDot.classList.add('listening');
+                statusText.textContent = 'Listening...';
+                audioRing.classList.add('active');
+                setExpression('focused');
+            };
+
+            recognition.onend = () => {
+                if (isListening) {
+                    // Restart if we're still supposed to be listening
+                    try { recognition.start(); } catch (e) {}
+                } else {
+                    micBtn.classList.remove('active');
+                    statusDot.classList.remove('listening');
+                    statusText.textContent = 'Online';
+                    audioRing.classList.remove('active');
+                }
+            };
+
+            recognition.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const result = event.results[i];
+                    if (result.isFinal) {
+                        finalTranscript += result[0].transcript;
+                    } else {
+                        interimTranscript += result[0].transcript;
+                    }
+                }
+
+                // Show interim transcript
+                if (interimTranscript) {
+                    transcript.style.display = 'block';
+                    transcript.textContent = interimTranscript;
+                }
+
+                // Handle final transcript
+                if (finalTranscript) {
+                    transcript.textContent = finalTranscript;
+                    handleSpeechInput(finalTranscript.trim().toLowerCase());
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.log('Speech error:', event.error);
+                if (event.error === 'not-allowed') {
+                    speechText.textContent = "I need microphone permission to hear you! Please allow access. 🎤";
+                }
+            };
+
+            return true;
+        }
+
+        function toggleListening() {
+            if (!recognition && !initSpeechRecognition()) {
+                speechText.textContent = "Sorry, speech recognition isn't supported in your browser. Try Chrome! 🌐";
+                return;
+            }
+
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+                micBtn.classList.add('off');
+                micBtn.textContent = '🔇';
+                setExpression('neutral');
+            } else {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.log('Recognition error:', e);
+                }
+            }
+        }
+
+        // ===== Response System =====
+        function handleSpeechInput(input) {
+            setExpression('thinking');
+            typingIndicator.classList.add('show');
+
+            setTimeout(() => {
+                typingIndicator.classList.remove('show');
+                let response;
+
+                // Simple keyword matching
+                if (input.match(/\b(hi|hello|hey|good morning|good evening)\b/)) {
+                    response = randomFrom(responses.greeting);
+                    setExpression('happy');
+                } else if (input.match(/\b(thank|thanks|appreciate)\b/)) {
+                    response = randomFrom(responses.thanks);
+                    setExpression('happy');
+                } else if (input.match(/\b(how are you|how's it going|what's up)\b/)) {
+                    response = randomFrom(responses.howAreYou);
+                    setExpression('excited');
+                } else if (input.match(/\b(think|idea|wondering|maybe)\b/)) {
+                    response = randomFrom(responses.fallback);
+                    setExpression('thinking');
+                } else {
+                    response = randomFrom(responses.fallback);
+                    setExpression('neutral');
+                }
+
+                speechText.textContent = response;
+            }, 800 + Math.random() * 700);
+        }
+
+        function randomFrom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        // ===== Voice Output =====
+        async function speak() {
+            if (isSpeaking) return;
+
+            isSpeaking = true;
+            voiceBtn.classList.add('speaking');
+            expressionRing.classList.add('speaking');
+            statusDot.classList.add('speaking');
+            statusText.textContent = 'Speaking...';
+            setExpression('happy');
+
+            // Pick random voice file (different from last)
+            let voiceIndex;
+            do {
+                voiceIndex = Math.floor(Math.random() * voiceLines.length);
+            } while (voiceIndex === lastVoicePlayed && voiceLines.length > 1);
+            lastVoicePlayed = voiceIndex;
+
+            const audio = new Audio(voiceLines[voiceIndex]);
+            
+            audio.onended = finishSpeaking;
+            audio.onerror = () => {
+                fallbackSpeak();
+            };
+
+            try {
+                await audio.play();
+            } catch (e) {
+                fallbackSpeak();
+            }
+        }
+
+        function fallbackSpeak() {
+            if ('speechSynthesis' in window) {
+                const text = "Hey! I'm Iris, your digital familiar. Ready to chat!";
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.1;
+                
+                const voices = speechSynthesis.getVoices();
+                const preferred = voices.find(v => v.name.includes('Samantha') || v.name.includes('Female'));
+                if (preferred) utterance.voice = preferred;
+                
+                utterance.onend = finishSpeaking;
+                speechSynthesis.speak(utterance);
+            } else {
+                setTimeout(finishSpeaking, 2000);
+            }
+        }
+
+        function finishSpeaking() {
+            isSpeaking = false;
+            voiceBtn.classList.remove('speaking');
+            expressionRing.classList.remove('speaking');
+            statusDot.classList.remove('speaking');
+            statusText.textContent = isListening ? 'Listening...' : 'Online';
+            setExpression('neutral');
+        }
+
+        // ===== Floating Mode =====
+        function toggleFloat() {
+            document.body.classList.toggle('floating');
+            const isFloating = document.body.classList.contains('floating');
+            document.getElementById('floatBtn').textContent = isFloating ? '📍' : '📌';
+        }
+
+        // ===== Event Listeners =====
+        micBtn.addEventListener('click', toggleListening);
+        voiceBtn.addEventListener('click', speak);
+        document.getElementById('expressionBtn').addEventListener('click', cycleExpression);
+        document.getElementById('themeBtn').addEventListener('click', cycleTheme);
+        document.getElementById('floatBtn').addEventListener('click', toggleFloat);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger if typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            switch (e.key.toLowerCase()) {
+                case 'm': toggleListening(); break;
+                case 'v': speak(); break;
+                case 'e': cycleExpression(); break;
+                case 't': cycleTheme(); break;
+                case 'f': toggleFloat(); break;
+                case ' ':
+                    e.preventDefault();
+                    speak();
+                    break;
+            }
+        });
+
+        // ===== Init =====
+        initSpeechRecognition();
+        
+        // Load voices for fallback TTS
+        if ('speechSynthesis' in window) {
+            speechSynthesis.getVoices();
+            speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+        }
+
+        // Welcome message based on time
+        const hour = new Date().getHours();
+        if (hour >= 5 && hour < 12) {
+            speechText.textContent = "Good morning! ☀️ Press M or the mic button to chat!";
+        } else if (hour >= 12 && hour < 17) {
+            speechText.textContent = "Good afternoon! 🌤️ Ready to chat whenever you are!";
+        } else if (hour >= 17 && hour < 21) {
+            speechText.textContent = "Good evening! 🌅 What's on your mind?";
+        } else {
+            speechText.textContent = "Hey night owl! 🌙 I'm here if you want to chat!";
+        }
+    </script>
+</body>
+</html>
