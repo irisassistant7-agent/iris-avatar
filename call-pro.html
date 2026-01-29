@@ -447,33 +447,11 @@
             { name: 'surprised', emoji: '😮' }
         ];
 
-        const responses = {
-            greeting: [
-                "Hey there! Good to see you! 💜",
-                "Hi! What's on your mind today?",
-                "Hello! I'm here and ready to chat!",
-                "Hey! Been waiting for you! ✨"
-            ],
-            thanks: [
-                "You're welcome! Happy to help! 😊",
-                "Anytime! That's what I'm here for!",
-                "No problem at all! 💜",
-                "My pleasure!"
-            ],
-            howAreYou: [
-                "I'm doing great! Just vibing in the digital realm. How about you?",
-                "Feeling creative today! Thanks for asking! 💜",
-                "I'm good! Ready to build something cool! 🔥",
-                "Living my best digital life! What's up with you?"
-            ],
-            fallback: [
-                "That's interesting! Tell me more... 🤔",
-                "I hear you! What else is on your mind?",
-                "Hmm, I'm thinking about that... 💭",
-                "Got it! Anything else?",
-                "I'm listening! 👁️"
-            ]
-        };
+        // API endpoint for real-time Iris responses
+        const API_URL = 'https://iris-call-api.vercel.app';
+        
+        // Conversation history for context
+        let conversationHistory = [];
 
         const voiceLines = ['voice.mp3', 'voice2.mp3', 'voice3.mp3'];
         let lastVoicePlayed = -1;
@@ -844,85 +822,110 @@
             }
         }
 
-        // ===== Response System =====
-        function handleSpeechInput(input) {
+        // ===== Response System (Real-time AI) =====
+        async function handleSpeechInput(input) {
             setExpression('thinking');
             typingIndicator.classList.add('show');
+            speechText.textContent = 'Thinking...';
 
-            setTimeout(() => {
-                typingIndicator.classList.remove('show');
-                let response;
+            try {
+                // Get AI response
+                const chatResponse = await fetch(`${API_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: input,
+                        history: conversationHistory
+                    })
+                });
 
-                if (input.match(/\b(hi|hello|hey|good morning|good evening)\b/)) {
-                    response = randomFrom(responses.greeting);
-                    setExpression('happy');
-                } else if (input.match(/\b(thank|thanks|appreciate)\b/)) {
-                    response = randomFrom(responses.thanks);
-                    setExpression('happy');
-                } else if (input.match(/\b(how are you|how's it going|what's up)\b/)) {
-                    response = randomFrom(responses.howAreYou);
-                    setExpression('excited');
-                } else {
-                    response = randomFrom(responses.fallback);
-                    setExpression('neutral');
+                if (!chatResponse.ok) throw new Error('Chat API failed');
+                
+                const { reply } = await chatResponse.json();
+                
+                // Update conversation history
+                conversationHistory.push({ role: 'user', content: input });
+                conversationHistory.push({ role: 'assistant', content: reply });
+                
+                // Keep history manageable
+                if (conversationHistory.length > 20) {
+                    conversationHistory = conversationHistory.slice(-20);
                 }
 
-                speechText.textContent = response;
-            }, 600 + Math.random() * 600);
+                typingIndicator.classList.remove('show');
+                speechText.textContent = reply;
+                setExpression('happy');
+
+                // Generate and play voice response
+                await speakResponse(reply);
+
+            } catch (error) {
+                console.error('Response error:', error);
+                typingIndicator.classList.remove('show');
+                speechText.textContent = "Hmm, I had trouble responding. Try again? 🤔";
+                setExpression('neutral');
+            }
         }
 
-        function randomFrom(arr) {
-            return arr[Math.floor(Math.random() * arr.length)];
-        }
-
-        // ===== Voice Output =====
-        async function speak() {
+        // Speak a specific response using TTS API
+        async function speakResponse(text) {
             if (isSpeaking) return;
 
             isSpeaking = true;
             voiceBtn.classList.add('speaking');
             statusDot.classList.add('speaking');
             statusText.textContent = 'Speaking...';
-            setExpression('happy');
-
+            
             // Boost visuals while speaking
             pulseIntensity = 2;
             baseAnimSpeed = 1.5;
 
-            let voiceIndex;
-            do {
-                voiceIndex = Math.floor(Math.random() * voiceLines.length);
-            } while (voiceIndex === lastVoicePlayed && voiceLines.length > 1);
-            lastVoicePlayed = voiceIndex;
-
-            const audio = new Audio(voiceLines[voiceIndex]);
-            
-            audio.onended = finishSpeaking;
-            audio.onerror = () => fallbackSpeak();
-
             try {
-                await audio.play();
-            } catch (e) {
-                fallbackSpeak();
+                const ttsResponse = await fetch(`${API_URL}/api/tts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+
+                if (!ttsResponse.ok) throw new Error('TTS failed');
+
+                const { audio } = await ttsResponse.json();
+                
+                const audioElement = new Audio(audio);
+                audioElement.onended = finishSpeaking;
+                audioElement.onerror = () => {
+                    console.error('Audio playback failed');
+                    finishSpeaking();
+                };
+                
+                await audioElement.play();
+
+            } catch (error) {
+                console.error('TTS error:', error);
+                // Fallback to browser TTS
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.1;
+                    utterance.onend = finishSpeaking;
+                    speechSynthesis.speak(utterance);
+                } else {
+                    finishSpeaking();
+                }
             }
         }
 
-        function fallbackSpeak() {
-            if ('speechSynthesis' in window) {
-                const text = "Hey! I'm Iris, your digital familiar. Ready to chat!";
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 1.0;
-                utterance.pitch = 1.1;
-                
-                const voices = speechSynthesis.getVoices();
-                const preferred = voices.find(v => v.name.includes('Samantha') || v.name.includes('Female'));
-                if (preferred) utterance.voice = preferred;
-                
-                utterance.onend = finishSpeaking;
-                speechSynthesis.speak(utterance);
-            } else {
-                setTimeout(finishSpeaking, 2000);
-            }
+        // ===== Voice Output (intro/greeting) =====
+        async function speak() {
+            const greetings = [
+                "Hey! I'm Iris, your digital familiar. Talk to me!",
+                "What's up? I'm listening!",
+                "Hey there! Got something on your mind?",
+                "Yo! Ready when you are!"
+            ];
+            const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+            speechText.textContent = greeting;
+            await speakResponse(greeting);
         }
 
         function finishSpeaking() {
