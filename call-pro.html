@@ -11,19 +11,15 @@
         :root {
             --accent: #a78bfa;
             --accent-glow: rgba(167, 139, 250, 0.3);
-            --bg-primary: #0f0f23;
-            --bg-secondary: #1a1a3e;
+            --bg-primary: #000;
+            --bg-secondary: #0a0a1a;
         }
 
         body {
             font-family: 'Inter', -apple-system, sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            background: var(--bg-primary);
             color: #fff;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             overflow: hidden;
             user-select: none;
         }
@@ -31,261 +27,78 @@
         /* Floating mode */
         body.floating {
             background: transparent !important;
-            min-height: 300px;
         }
 
-        body.floating .call-container {
-            background: rgba(15, 15, 35, 0.95);
-            border-radius: 30px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        body.floating .controls-container {
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 20px;
+            padding: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        body.floating .footer,
-        body.floating .shortcuts {
+        body.floating .shortcuts,
+        body.floating .footer {
             display: none;
         }
 
-        .call-container {
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-            transition: all 0.3s;
-        }
-
-        /* Avatar Container */
-        .avatar-container {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            margin: 0 auto 25px;
-        }
-
-        /* Audio Visualizer Ring */
-        .audio-ring {
-            position: absolute;
-            inset: -15px;
-            border-radius: 50%;
-            background: conic-gradient(
-                var(--accent) 0deg,
-                transparent 60deg,
-                var(--accent) 120deg,
-                transparent 180deg,
-                var(--accent) 240deg,
-                transparent 300deg
-            );
-            opacity: 0;
-            animation: rotate-ring 3s linear infinite;
-            transition: opacity 0.3s;
-        }
-
-        .audio-ring.active {
-            opacity: 0.6;
-        }
-
-        @keyframes rotate-ring {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Expression Ring */
-        .expression-ring {
-            position: absolute;
-            inset: -8px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), #06b6d4, #f472b6);
-            background-size: 300% 300%;
-            animation: gradient-flow 4s ease infinite;
-        }
-
-        @keyframes gradient-flow {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        /* Expression states */
-        .expression-ring.thinking {
-            animation: gradient-flow 2s ease infinite, pulse-think 1s ease infinite;
-        }
-
-        .expression-ring.excited {
-            animation: gradient-flow 1s ease infinite, pulse-excited 0.3s ease infinite;
-        }
-
-        .expression-ring.speaking {
-            animation: gradient-flow 1s ease infinite, pulse-speak 0.5s ease infinite;
-        }
-
-        @keyframes pulse-think {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-
-        @keyframes pulse-excited {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        @keyframes pulse-speak {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.03); opacity: 0.9; }
-        }
-
-        /* Main Avatar Circle */
-        .avatar-main {
-            position: absolute;
+        /* Canvas */
+        #canvas-container {
+            position: fixed;
             inset: 0;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--bg-secondary), #2d2d5a);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            z-index: 1;
         }
 
-        /* The Eye */
-        .eye-container {
-            position: relative;
-            width: 140px;
-            height: 140px;
-        }
-
-        .eye-white {
-            position: absolute;
+        /* Overlays */
+        .scanlines {
+            position: fixed;
             inset: 0;
-            border-radius: 50%;
-            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #f0f0ff 60%, #c0c0e0 100%);
-            box-shadow: inset 0 5px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .eye-iris {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 80px;
-            height: 80px;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            background: radial-gradient(circle at 40% 40%, 
-                #c084fc 0%, 
-                #9b5de5 30%, 
-                #7c3aed 60%, 
-                #5b21b6 100%
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1) 0px,
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 3px
             );
-            box-shadow: 0 0 30px var(--accent-glow);
-            transition: transform 0.1s ease-out;
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0.3;
         }
 
-        .eye-pupil {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 35px;
-            height: 35px;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #2a2a4a 0%, #0a0a1a 70%, #000 100%);
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.5) 100%);
+            pointer-events: none;
+            z-index: 2;
         }
 
-        /* Pupil expressions */
-        .eye-pupil.dilated {
-            width: 45px;
-            height: 45px;
-        }
-
-        .eye-pupil.focused {
-            width: 25px;
-            height: 25px;
-        }
-
-        /* Eye highlights */
-        .eye-highlight-main {
-            position: absolute;
-            top: 20%;
-            left: 25%;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-
-        .eye-highlight-small {
-            position: absolute;
-            top: 50%;
-            left: 60%;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.7);
-        }
-
-        .eye-highlight-tiny {
-            position: absolute;
-            top: 35%;
-            left: 70%;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        /* Eyelid for blinking and expressions */
-        .eyelid-top, .eyelid-bottom {
-            position: absolute;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, var(--bg-secondary), #2d2d5a);
+        /* UI Container */
+        .ui-layer {
+            position: fixed;
+            inset: 0;
             z-index: 10;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
         }
 
-        .eyelid-top {
-            top: 0;
-            height: 50%;
-            transform-origin: top;
-            transform: scaleY(0);
+        .ui-layer > * {
+            pointer-events: auto;
         }
 
-        .eyelid-bottom {
-            bottom: 0;
-            height: 50%;
-            transform-origin: bottom;
-            transform: scaleY(0);
-        }
-
-        /* Blink animation */
-        .eye-container.blink .eyelid-top { animation: blink-top 0.15s ease-in-out; }
-        .eye-container.blink .eyelid-bottom { animation: blink-bottom 0.15s ease-in-out; }
-
-        @keyframes blink-top {
-            0%, 100% { transform: scaleY(0); }
-            50% { transform: scaleY(1); }
-        }
-
-        @keyframes blink-bottom {
-            0%, 100% { transform: scaleY(0); }
-            50% { transform: scaleY(1); }
-        }
-
-        /* Squint expression */
-        .eye-container.squint .eyelid-top { transform: scaleY(0.3); }
-        .eye-container.squint .eyelid-bottom { transform: scaleY(0.2); }
-
-        /* Wide expression */
-        .eye-container.wide .eye-iris { transform: translate(-50%, -50%) scale(1.1); }
-        .eye-container.wide .eye-pupil { width: 45px; height: 45px; }
-
-        /* Info Section */
-        .info-section {
+        /* Top bar */
+        .top-bar {
+            padding: 25px;
             text-align: center;
-            margin-bottom: 20px;
+            pointer-events: none;
         }
 
         .name {
-            font-size: 1.6rem;
-            font-weight: 500;
-            background: linear-gradient(90deg, var(--accent), #f472b6);
+            font-size: 1.4rem;
+            font-weight: 300;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #a78bfa, #06b6d4, #f472b6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -296,9 +109,9 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            margin-top: 5px;
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.5);
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .status-dot {
@@ -325,43 +138,40 @@
         }
 
         .expression-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: rgba(255, 255, 255, 0.3);
-            margin-top: 3px;
+            margin-top: 4px;
+        }
+
+        /* Bottom section */
+        .bottom-section {
+            margin-top: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
 
         /* Speech Bubble */
         .speech-bubble {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 18px 22px;
-            margin-bottom: 20px;
-            position: relative;
-            backdrop-filter: blur(10px);
-            min-height: 70px;
-        }
-
-        .speech-bubble::before {
-            content: '';
-            position: absolute;
-            top: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-bottom: 8px solid rgba(255, 255, 255, 0.06);
+            padding: 16px 22px;
+            max-width: 450px;
+            backdrop-filter: blur(20px);
+            text-align: center;
         }
 
         .speech-text {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             line-height: 1.5;
             color: rgba(255, 255, 255, 0.9);
-            transition: opacity 0.2s;
         }
 
         .transcript {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: rgba(255, 255, 255, 0.4);
             margin-top: 10px;
             padding-top: 10px;
@@ -375,6 +185,7 @@
 
         .typing-indicator {
             display: none;
+            justify-content: center;
             gap: 4px;
             margin-top: 10px;
         }
@@ -398,7 +209,7 @@
         }
 
         /* Controls */
-        .controls {
+        .controls-container {
             display: flex;
             justify-content: center;
             gap: 12px;
@@ -406,12 +217,12 @@
         }
 
         .control-btn {
-            width: 48px;
-            height: 48px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             border: none;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             transition: all 0.2s;
             display: flex;
             align-items: center;
@@ -422,7 +233,7 @@
         .control-btn::after {
             content: attr(data-shortcut);
             position: absolute;
-            bottom: -18px;
+            bottom: -16px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 0.6rem;
@@ -438,7 +249,7 @@
 
         .btn-mic:hover { 
             background: rgba(59, 130, 246, 0.3);
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
 
         .btn-mic.active {
@@ -449,7 +260,7 @@
 
         @keyframes mic-pulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-            50% { box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.2); }
+            50% { box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.2); }
         }
 
         .btn-mic.off {
@@ -466,7 +277,7 @@
 
         .btn-voice:hover {
             background: rgba(244, 114, 182, 0.3);
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
 
         .btn-voice.speaking {
@@ -475,7 +286,7 @@
 
         @keyframes voice-pulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.4); }
-            50% { box-shadow: 0 0 20px 5px rgba(244, 114, 182, 0.3); }
+            50% { box-shadow: 0 0 20px 8px rgba(244, 114, 182, 0.3); }
         }
 
         .btn-expression {
@@ -486,7 +297,7 @@
 
         .btn-expression:hover {
             background: rgba(167, 139, 250, 0.3);
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
 
         .btn-theme {
@@ -497,7 +308,7 @@
 
         .btn-theme:hover {
             background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
 
         .btn-float {
@@ -508,72 +319,56 @@
 
         .btn-float:hover {
             background: rgba(34, 197, 94, 0.3);
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
 
-        /* Shortcuts hint */
+        /* Shortcuts */
         .shortcuts {
-            margin-top: 30px;
             text-align: center;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.25);
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.2);
+            margin-top: 10px;
+            padding-bottom: 15px;
         }
 
         .shortcuts span {
-            margin: 0 10px;
+            margin: 0 8px;
         }
 
         .shortcuts kbd {
             background: rgba(255, 255, 255, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 2px 5px;
+            border-radius: 3px;
             font-family: monospace;
+            font-size: 0.65rem;
         }
 
         /* Footer */
         .footer {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.2);
+            bottom: 8px;
+            right: 15px;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.15);
+            z-index: 10;
         }
 
-        /* Mobile responsive */
+        /* Mobile */
         @media (max-width: 600px) {
             .shortcuts { display: none; }
             .control-btn::after { display: none; }
-            .call-container { padding: 15px; }
-            .avatar-container { width: 180px; height: 180px; }
-            .eye-container { width: 110px; height: 110px; }
-            .eye-iris { width: 65px; height: 65px; }
-            .eye-pupil { width: 28px; height: 28px; }
+            .control-btn { width: 45px; height: 45px; font-size: 1rem; }
         }
     </style>
 </head>
 <body>
-    <div class="call-container">
-        <div class="avatar-container">
-            <div class="audio-ring" id="audioRing"></div>
-            <div class="expression-ring" id="expressionRing"></div>
-            <div class="avatar-main">
-                <div class="eye-container" id="eyeContainer">
-                    <div class="eye-white"></div>
-                    <div class="eye-iris" id="eyeIris">
-                        <div class="eye-pupil" id="eyePupil"></div>
-                        <div class="eye-highlight-main"></div>
-                        <div class="eye-highlight-small"></div>
-                        <div class="eye-highlight-tiny"></div>
-                    </div>
-                    <div class="eyelid-top"></div>
-                    <div class="eyelid-bottom"></div>
-                </div>
-            </div>
-        </div>
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+    <div id="canvas-container"></div>
 
-        <div class="info-section">
-            <h1 class="name">Iris</h1>
+    <div class="ui-layer">
+        <div class="top-bar">
+            <h1 class="name">I R I S</h1>
             <div class="status">
                 <span class="status-dot" id="statusDot"></span>
                 <span id="statusText">Online</span>
@@ -581,43 +376,41 @@
             <div class="expression-label" id="expressionLabel">neutral 😌</div>
         </div>
 
-        <div class="speech-bubble">
-            <p class="speech-text" id="speechText">Hey! Press the mic button or hit <kbd>M</kbd> to talk to me. I'm listening! 👁️✨</p>
-            <p class="transcript" id="transcript" style="display: none;"></p>
-            <div class="typing-indicator" id="typingIndicator">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
+        <div class="bottom-section">
+            <div class="speech-bubble">
+                <p class="speech-text" id="speechText">Hey! Press the mic button or hit <kbd>M</kbd> to talk to me. I'm listening! 👁️✨</p>
+                <p class="transcript" id="transcript" style="display: none;"></p>
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
             </div>
-        </div>
 
-        <div class="controls">
-            <button class="control-btn btn-mic" id="micBtn" title="Toggle microphone" data-shortcut="M">🎤</button>
-            <button class="control-btn btn-voice" id="voiceBtn" title="Hear my voice" data-shortcut="V">🔊</button>
-            <button class="control-btn btn-expression" id="expressionBtn" title="Change expression" data-shortcut="E">😊</button>
-            <button class="control-btn btn-theme" id="themeBtn" title="Change theme" data-shortcut="T">🎨</button>
-            <button class="control-btn btn-float" id="floatBtn" title="Floating mode" data-shortcut="F">📌</button>
-        </div>
+            <div class="controls-container">
+                <button class="control-btn btn-mic" id="micBtn" title="Toggle microphone" data-shortcut="M">🎤</button>
+                <button class="control-btn btn-voice" id="voiceBtn" title="Hear my voice" data-shortcut="V">🔊</button>
+                <button class="control-btn btn-expression" id="expressionBtn" title="Change expression" data-shortcut="E">😊</button>
+                <button class="control-btn btn-theme" id="themeBtn" title="Change theme" data-shortcut="T">🎨</button>
+                <button class="control-btn btn-float" id="floatBtn" title="Floating mode" data-shortcut="F">📌</button>
+            </div>
 
-        <div class="shortcuts">
-            <span><kbd>M</kbd> Mic</span>
-            <span><kbd>V</kbd> Voice</span>
-            <span><kbd>E</kbd> Expression</span>
-            <span><kbd>T</kbd> Theme</span>
-            <span><kbd>F</kbd> Float</span>
-            <span><kbd>Space</kbd> Quick speak</span>
+            <div class="shortcuts">
+                <span><kbd>M</kbd> Mic</span>
+                <span><kbd>V</kbd> Voice</span>
+                <span><kbd>E</kbd> Expression</span>
+                <span><kbd>T</kbd> Theme</span>
+                <span><kbd>F</kbd> Float</span>
+                <span><kbd>Space</kbd> Speak</span>
+            </div>
         </div>
     </div>
 
-    <div class="footer">Built with 💜 by Iris • iris-avatar.vercel.app/call-pro</div>
+    <div class="footer">iris-avatar.vercel.app/call-pro</div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         // ===== Elements =====
-        const eyeContainer = document.getElementById('eyeContainer');
-        const eyeIris = document.getElementById('eyeIris');
-        const eyePupil = document.getElementById('eyePupil');
-        const audioRing = document.getElementById('audioRing');
-        const expressionRing = document.getElementById('expressionRing');
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const expressionLabel = document.getElementById('expressionLabel');
@@ -631,24 +424,27 @@
         let isListening = false;
         let isSpeaking = false;
         let currentExpression = 'neutral';
-        let currentTheme = 0;
+        let currentThemeIndex = 0;
         let recognition = null;
 
-        const themes = [
-            { name: 'Violet', accent: '#a78bfa' },
-            { name: 'Cyan', accent: '#06b6d4' },
-            { name: 'Rose', accent: '#f472b6' },
-            { name: 'Emerald', accent: '#22c55e' },
-            { name: 'Amber', accent: '#fbbf24' }
-        ];
+        // ===== Color Themes =====
+        const themes = {
+            violet: { primary: 0xa78bfa, secondary: 0x7c3aed, glow: 0xc4b5fd, name: 'Violet' },
+            cyan: { primary: 0x06b6d4, secondary: 0x0891b2, glow: 0x67e8f9, name: 'Cyan' },
+            rose: { primary: 0xf472b6, secondary: 0xec4899, glow: 0xfbcfe8, name: 'Rose' },
+            amber: { primary: 0xfbbf24, secondary: 0xf59e0b, glow: 0xfde68a, name: 'Amber' },
+            emerald: { primary: 0x34d399, secondary: 0x10b981, glow: 0xa7f3d0, name: 'Emerald' }
+        };
+        const themeKeys = Object.keys(themes);
+        let currentTheme = 'violet';
 
         const expressions = [
-            { name: 'neutral', emoji: '😌', pupil: 'normal', ring: '' },
-            { name: 'happy', emoji: '😊', pupil: 'dilated', ring: '' },
-            { name: 'excited', emoji: '🤩', pupil: 'dilated', ring: 'excited' },
-            { name: 'thinking', emoji: '🤔', pupil: 'focused', ring: 'thinking' },
-            { name: 'focused', emoji: '🎯', pupil: 'focused', ring: '' },
-            { name: 'surprised', emoji: '😮', pupil: 'dilated', ring: 'excited' }
+            { name: 'neutral', emoji: '😌' },
+            { name: 'happy', emoji: '😊' },
+            { name: 'excited', emoji: '🤩' },
+            { name: 'thinking', emoji: '🤔' },
+            { name: 'focused', emoji: '🎯' },
+            { name: 'surprised', emoji: '😮' }
         ];
 
         const responses = {
@@ -662,7 +458,7 @@
                 "You're welcome! Happy to help! 😊",
                 "Anytime! That's what I'm here for!",
                 "No problem at all! 💜",
-                "My pleasure! Let me know if you need anything else!"
+                "My pleasure!"
             ],
             howAreYou: [
                 "I'm doing great! Just vibing in the digital realm. How about you?",
@@ -674,63 +470,279 @@
                 "That's interesting! Tell me more... 🤔",
                 "I hear you! What else is on your mind?",
                 "Hmm, I'm thinking about that... 💭",
-                "Got it! Anything else you want to chat about?",
-                "I'm listening! Keep going! 👁️"
+                "Got it! Anything else?",
+                "I'm listening! 👁️"
             ]
         };
 
         const voiceLines = ['voice.mp3', 'voice2.mp3', 'voice3.mp3'];
         let lastVoicePlayed = -1;
 
-        // ===== Eye Following =====
-        document.addEventListener('mousemove', (e) => {
-            const rect = eyeContainer.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
+        // ===== Three.js Scene =====
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 4.5;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Create the Iris entity
+        const irisGroup = new THREE.Group();
+        scene.add(irisGroup);
+
+        // Core eye sphere
+        const coreGeometry = new THREE.SphereGeometry(0.8, 64, 64);
+        const coreMaterial = new THREE.MeshBasicMaterial({
+            color: themes[currentTheme].primary,
+            transparent: true,
+            opacity: 0.9
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        irisGroup.add(core);
+
+        // Pupil (inner dark sphere)
+        const pupilGeometry = new THREE.SphereGeometry(0.35, 32, 32);
+        const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x0a0a0f });
+        const pupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        pupil.position.z = 0.5;
+        irisGroup.add(pupil);
+
+        // Iris rings
+        const ringCount = 5;
+        const rings = [];
+        for (let i = 0; i < ringCount; i++) {
+            const ringGeometry = new THREE.TorusGeometry(0.9 + i * 0.15, 0.02, 16, 100);
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: themes[currentTheme].glow,
+                transparent: true,
+                opacity: 0.3 - i * 0.05
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = Math.PI / 2;
+            ring.userData = { baseScale: 1, speed: 0.5 + Math.random() * 0.5, offset: Math.random() * Math.PI * 2 };
+            rings.push(ring);
+            irisGroup.add(ring);
+        }
+
+        // Orbiting particles
+        const particleCount = 200;
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        const particleSizes = new Float32Array(particleCount);
+        const particleData = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const radius = 1.5 + Math.random() * 2;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
             
-            const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-            const distance = Math.min(18, Math.hypot(e.clientX - centerX, e.clientY - centerY) / 15);
+            particlePositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            particlePositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            particlePositions[i * 3 + 2] = radius * Math.cos(phi);
             
-            const x = Math.cos(angle) * distance;
-            const y = Math.sin(angle) * distance;
+            particleSizes[i] = 2 + Math.random() * 3;
             
-            eyeIris.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            particleData.push({
+                radius: radius,
+                theta: theta,
+                phi: phi,
+                speed: 0.1 + Math.random() * 0.3,
+                phiSpeed: (Math.random() - 0.5) * 0.1
+            });
+        }
+
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        particleGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+
+        const particleMaterial = new THREE.PointsMaterial({
+            color: themes[currentTheme].glow,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
         });
 
-        // ===== Blinking =====
-        function blink() {
-            eyeContainer.classList.add('blink');
-            setTimeout(() => eyeContainer.classList.remove('blink'), 150);
-            setTimeout(blink, 2000 + Math.random() * 4000);
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        irisGroup.add(particles);
+
+        // Outer glow shell
+        const glowGeometry = new THREE.SphereGeometry(1.2, 32, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: themes[currentTheme].glow,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.BackSide
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        irisGroup.add(glow);
+
+        // Energy tendrils
+        const tendrilCount = 8;
+        const tendrils = [];
+        for (let i = 0; i < tendrilCount; i++) {
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, 0.5),
+                new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, 1),
+                new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, 1.5 + Math.random())
+            ]);
+            const tendrilGeometry = new THREE.TubeGeometry(curve, 20, 0.02, 8, false);
+            const tendrilMaterial = new THREE.MeshBasicMaterial({
+                color: themes[currentTheme].primary,
+                transparent: true,
+                opacity: 0.4
+            });
+            const tendril = new THREE.Mesh(tendrilGeometry, tendrilMaterial);
+            tendril.rotation.z = (i / tendrilCount) * Math.PI * 2;
+            tendril.userData = { baseRotation: tendril.rotation.z };
+            tendrils.push(tendril);
+            irisGroup.add(tendril);
         }
-        setTimeout(blink, 1500);
+
+        // ===== Animation State =====
+        let baseAnimSpeed = 1;
+        let pulseIntensity = 1;
+        let targetPupilScale = 1;
+        let currentPupilScale = 1;
+
+        // Mouse tracking
+        let mouseX = 0, mouseY = 0;
+        let targetRotationX = 0, targetRotationY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+        });
+
+        // Touch support
+        document.addEventListener('touchmove', (e) => {
+            mouseX = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+            mouseY = (e.touches[0].clientY / window.innerHeight) * 2 - 1;
+        });
+
+        // Animation loop
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01 * baseAnimSpeed;
+
+            // Gentle auto-rotation
+            targetRotationY += 0.001;
+
+            // Smooth rotation
+            irisGroup.rotation.y += (targetRotationY - irisGroup.rotation.y) * 0.03;
+            irisGroup.rotation.x += (targetRotationX - irisGroup.rotation.x) * 0.03;
+
+            // Pulse core
+            const pulse = Math.sin(time * 2) * 0.05 * pulseIntensity;
+            core.scale.setScalar(1 + pulse);
+
+            // Animate rings
+            rings.forEach((ring, i) => {
+                const scale = 1 + Math.sin(time * ring.userData.speed + ring.userData.offset) * 0.1 * pulseIntensity;
+                ring.scale.setScalar(scale);
+                ring.rotation.z = time * 0.1 * (i % 2 === 0 ? 1 : -1);
+            });
+
+            // Animate particles
+            const positions = particles.geometry.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                const data = particleData[i];
+                data.theta += data.speed * 0.02 * baseAnimSpeed;
+                data.phi += data.phiSpeed * 0.02 * baseAnimSpeed;
+                
+                positions[i * 3] = data.radius * Math.sin(data.phi) * Math.cos(data.theta);
+                positions[i * 3 + 1] = data.radius * Math.sin(data.phi) * Math.sin(data.theta);
+                positions[i * 3 + 2] = data.radius * Math.cos(data.phi);
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // Animate tendrils
+            tendrils.forEach((tendril, i) => {
+                tendril.rotation.z = tendril.userData.baseRotation + Math.sin(time + i) * 0.2 * pulseIntensity;
+            });
+
+            // Glow pulse
+            glow.scale.setScalar(1.2 + Math.sin(time * 1.5) * 0.1 * pulseIntensity);
+            glowMaterial.opacity = 0.1 + Math.sin(time * 2) * 0.05 * pulseIntensity;
+
+            // Pupil follows mouse and scales
+            currentPupilScale += (targetPupilScale - currentPupilScale) * 0.1;
+            pupil.scale.setScalar(currentPupilScale);
+            pupil.position.x = mouseX * 0.15;
+            pupil.position.y = -mouseY * 0.15;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // ===== Theme Switching =====
+        function setTheme(themeName) {
+            currentTheme = themeName;
+            const theme = themes[themeName];
+            
+            coreMaterial.color.setHex(theme.primary);
+            particleMaterial.color.setHex(theme.glow);
+            glowMaterial.color.setHex(theme.glow);
+            
+            rings.forEach(ring => {
+                ring.material.color.setHex(theme.glow);
+            });
+            
+            tendrils.forEach(tendril => {
+                tendril.material.color.setHex(theme.primary);
+            });
+
+            // Update CSS variable
+            const hexColor = '#' + theme.primary.toString(16).padStart(6, '0');
+            document.documentElement.style.setProperty('--accent', hexColor);
+        }
+
+        function cycleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themeKeys.length;
+            setTheme(themeKeys[currentThemeIndex]);
+        }
 
         // ===== Expression System =====
         function setExpression(expressionName) {
             const expr = expressions.find(e => e.name === expressionName) || expressions[0];
             currentExpression = expr.name;
-            
-            // Update pupil
-            eyePupil.classList.remove('dilated', 'focused', 'normal');
-            if (expr.pupil !== 'normal') {
-                eyePupil.classList.add(expr.pupil);
-            }
-
-            // Update ring
-            expressionRing.classList.remove('thinking', 'excited', 'speaking');
-            if (expr.ring) {
-                expressionRing.classList.add(expr.ring);
-            }
-
-            // Update label
             expressionLabel.textContent = `${expr.name} ${expr.emoji}`;
 
-            // Eye squint for certain expressions
-            eyeContainer.classList.remove('squint', 'wide');
-            if (expr.name === 'happy' || expr.name === 'thinking') {
-                eyeContainer.classList.add('squint');
-            } else if (expr.name === 'surprised' || expr.name === 'excited') {
-                eyeContainer.classList.add('wide');
+            // Adjust visual parameters based on expression
+            switch (expr.name) {
+                case 'happy':
+                    pulseIntensity = 1.3;
+                    baseAnimSpeed = 1.2;
+                    targetPupilScale = 1.2;
+                    break;
+                case 'excited':
+                    pulseIntensity = 2;
+                    baseAnimSpeed = 1.8;
+                    targetPupilScale = 1.4;
+                    break;
+                case 'thinking':
+                    pulseIntensity = 0.6;
+                    baseAnimSpeed = 0.6;
+                    targetPupilScale = 0.8;
+                    break;
+                case 'focused':
+                    pulseIntensity = 0.8;
+                    baseAnimSpeed = 0.8;
+                    targetPupilScale = 0.7;
+                    break;
+                case 'surprised':
+                    pulseIntensity = 1.8;
+                    baseAnimSpeed = 1.5;
+                    targetPupilScale = 1.5;
+                    break;
+                default: // neutral
+                    pulseIntensity = 1;
+                    baseAnimSpeed = 1;
+                    targetPupilScale = 1;
             }
         }
 
@@ -738,18 +750,6 @@
             const currentIndex = expressions.findIndex(e => e.name === currentExpression);
             const nextIndex = (currentIndex + 1) % expressions.length;
             setExpression(expressions[nextIndex].name);
-        }
-
-        // ===== Theme System =====
-        function setTheme(index) {
-            currentTheme = index % themes.length;
-            const theme = themes[currentTheme];
-            document.documentElement.style.setProperty('--accent', theme.accent);
-            document.documentElement.style.setProperty('--accent-glow', theme.accent + '4d');
-        }
-
-        function cycleTheme() {
-            setTheme(currentTheme + 1);
         }
 
         // ===== Speech Recognition =====
@@ -774,19 +774,16 @@
                 micBtn.textContent = '🎙️';
                 statusDot.classList.add('listening');
                 statusText.textContent = 'Listening...';
-                audioRing.classList.add('active');
                 setExpression('focused');
             };
 
             recognition.onend = () => {
                 if (isListening) {
-                    // Restart if we're still supposed to be listening
                     try { recognition.start(); } catch (e) {}
                 } else {
                     micBtn.classList.remove('active');
                     statusDot.classList.remove('listening');
                     statusText.textContent = 'Online';
-                    audioRing.classList.remove('active');
                 }
             };
 
@@ -803,13 +800,11 @@
                     }
                 }
 
-                // Show interim transcript
                 if (interimTranscript) {
                     transcript.style.display = 'block';
                     transcript.textContent = interimTranscript;
                 }
 
-                // Handle final transcript
                 if (finalTranscript) {
                     transcript.textContent = finalTranscript;
                     handleSpeechInput(finalTranscript.trim().toLowerCase());
@@ -819,7 +814,7 @@
             recognition.onerror = (event) => {
                 console.log('Speech error:', event.error);
                 if (event.error === 'not-allowed') {
-                    speechText.textContent = "I need microphone permission to hear you! Please allow access. 🎤";
+                    speechText.textContent = "I need microphone permission to hear you! 🎤";
                 }
             };
 
@@ -828,7 +823,7 @@
 
         function toggleListening() {
             if (!recognition && !initSpeechRecognition()) {
-                speechText.textContent = "Sorry, speech recognition isn't supported in your browser. Try Chrome! 🌐";
+                speechText.textContent = "Speech recognition isn't supported. Try Chrome! 🌐";
                 return;
             }
 
@@ -856,7 +851,6 @@
                 typingIndicator.classList.remove('show');
                 let response;
 
-                // Simple keyword matching
                 if (input.match(/\b(hi|hello|hey|good morning|good evening)\b/)) {
                     response = randomFrom(responses.greeting);
                     setExpression('happy');
@@ -866,16 +860,13 @@
                 } else if (input.match(/\b(how are you|how's it going|what's up)\b/)) {
                     response = randomFrom(responses.howAreYou);
                     setExpression('excited');
-                } else if (input.match(/\b(think|idea|wondering|maybe)\b/)) {
-                    response = randomFrom(responses.fallback);
-                    setExpression('thinking');
                 } else {
                     response = randomFrom(responses.fallback);
                     setExpression('neutral');
                 }
 
                 speechText.textContent = response;
-            }, 800 + Math.random() * 700);
+            }, 600 + Math.random() * 600);
         }
 
         function randomFrom(arr) {
@@ -888,12 +879,14 @@
 
             isSpeaking = true;
             voiceBtn.classList.add('speaking');
-            expressionRing.classList.add('speaking');
             statusDot.classList.add('speaking');
             statusText.textContent = 'Speaking...';
             setExpression('happy');
 
-            // Pick random voice file (different from last)
+            // Boost visuals while speaking
+            pulseIntensity = 2;
+            baseAnimSpeed = 1.5;
+
             let voiceIndex;
             do {
                 voiceIndex = Math.floor(Math.random() * voiceLines.length);
@@ -903,9 +896,7 @@
             const audio = new Audio(voiceLines[voiceIndex]);
             
             audio.onended = finishSpeaking;
-            audio.onerror = () => {
-                fallbackSpeak();
-            };
+            audio.onerror = () => fallbackSpeak();
 
             try {
                 await audio.play();
@@ -935,7 +926,6 @@
         function finishSpeaking() {
             isSpeaking = false;
             voiceBtn.classList.remove('speaking');
-            expressionRing.classList.remove('speaking');
             statusDot.classList.remove('speaking');
             statusText.textContent = isListening ? 'Listening...' : 'Online';
             setExpression('neutral');
@@ -957,7 +947,6 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Don't trigger if typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             switch (e.key.toLowerCase()) {
@@ -973,16 +962,22 @@
             }
         });
 
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
         // ===== Init =====
         initSpeechRecognition();
-        
-        // Load voices for fallback TTS
+
         if ('speechSynthesis' in window) {
             speechSynthesis.getVoices();
             speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
         }
 
-        // Welcome message based on time
+        // Welcome message
         const hour = new Date().getHours();
         if (hour >= 5 && hour < 12) {
             speechText.textContent = "Good morning! ☀️ Press M or the mic button to chat!";
