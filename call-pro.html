@@ -629,12 +629,14 @@
             requestAnimationFrame(animate);
             time += 0.01 * baseAnimSpeed;
 
-            // Gentle auto-rotation
-            targetRotationY += 0.001;
+            // No auto-rotation - eye always faces you
+            // Subtle sway based on mouse position for liveliness
+            targetRotationY = mouseX * 0.3;
+            targetRotationX = mouseY * 0.2;
 
-            // Smooth rotation
-            irisGroup.rotation.y += (targetRotationY - irisGroup.rotation.y) * 0.03;
-            irisGroup.rotation.x += (targetRotationX - irisGroup.rotation.x) * 0.03;
+            // Smooth rotation (limited range so it never turns away)
+            irisGroup.rotation.y += (targetRotationY - irisGroup.rotation.y) * 0.05;
+            irisGroup.rotation.x += (targetRotationX - irisGroup.rotation.x) * 0.05;
 
             // Pulse core
             const pulse = Math.sin(time * 2) * 0.05 * pulseIntensity;
