@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Streaming Overlay</title>
+    <!--
+    ╔══════════════════════════════════════════════════════════════╗
+    ║  IRIS STREAMING OVERLAY - OBS Browser Source Edition         ║
+    ╠══════════════════════════════════════════════════════════════╣
+    ║  URL Parameters:                                             ║
+    ║    ?pos=center|bottom-left|bottom-right|top-left|top-right   ║
+    ║    ?size=small|medium|large                                  ║
+    ║    ?theme=violet|cyan|rose|amber|emerald                     ║
+    ║    ?mic=on|off (enable microphone reactivity)                ║
+    ║                                                              ║
+    ║  Example:                                                    ║
+    ║    stream-overlay.html?pos=bottom-right&size=medium&mic=on   ║
+    ║                                                              ║
+    ║  Keyboard Shortcuts:                                         ║
+    ║    R - Reset position                                        ║
+    ║    T - Cycle theme                                           ║
+    ║    M - Toggle mic reactivity                                 ║
+    ║    1-5 - Quick theme select                                  ║
+    ║                                                              ║
+    ║  OBS Setup:                                                  ║
+    ║    1. Add Browser Source                                     ║
+    ║    2. Set URL to this file (local or hosted)                 ║
+    ║    3. Set width/height (recommend 400x400)                   ║
+    ║    4. Check "Shutdown source when not visible"               ║
+    ║    5. Position in your scene                                 ║
+    ╚══════════════════════════════════════════════════════════════╝
+    -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        /* Position modes */
+        body.pos-center { justify-content: center; align-items: center; }
+        body.pos-bottom-left { justify-content: flex-start; align-items: flex-end; padding: 20px; }
+        body.pos-bottom-right { justify-content: flex-end; align-items: flex-end; padding: 20px; }
+        body.pos-top-left { justify-content: flex-start; align-items: flex-start; padding: 20px; }
+        body.pos-top-right { justify-content: flex-end; align-items: flex-start; padding: 20px; }
+
+        #iris-container {
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        /* Size modes */
+        .size-small #iris-container { width: 150px; height: 150px; }
+        .size-medium #iris-container { width: 250px; height: 250px; }
+        .size-large #iris-container { width: 400px; height: 400px; }
+
+        /* The Eye */
+        #iris-eye {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-8px) rotate(1deg); }
+            50% { transform: translateY(0px) rotate(0deg); }
+            75% { transform: translateY(-5px) rotate(-1deg); }
+        }
+
+        /* Outer glow ring */
+        #outer-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            height: 95%;
+            border-radius: 50%;
+            border: 3px solid var(--glow-color);
+            box-shadow: 
+                0 0 30px var(--glow-color),
+                0 0 60px var(--glow-color-dim),
+                inset 0 0 30px var(--glow-color-dim);
+            opacity: 0.8;
+            animation: pulse-ring 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+        }
+
+        /* Energy ring - reacts to audio */
+        #energy-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            border: 2px solid var(--energy-color);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .energy-pulse {
+            animation: energy-pulse 0.5s ease-out forwards;
+        }
+
+        @keyframes energy-pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        /* Sclera (white of eye) */
+        #sclera {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, 
+                rgba(255,255,255,0.95) 0%,
+                rgba(240,240,245,0.9) 50%,
+                rgba(220,220,230,0.85) 100%);
+            box-shadow: 
+                inset 0 0 40px rgba(0,0,0,0.15),
+                0 0 20px var(--glow-color-dim);
+        }
+
+        /* Iris (colored part) */
+        #iris {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 55%;
+            height: 55%;
+            border-radius: 50%;
+            background: var(--iris-gradient);
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,0.4),
+                0 0 15px var(--glow-color-dim);
+            transition: width 0.15s ease, height 0.15s ease;
+        }
+
+        /* Iris texture */
+        #iris::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            background: repeating-conic-gradient(
+                from 0deg,
+                transparent 0deg 3deg,
+                rgba(255,255,255,0.1) 3deg 6deg
+            );
+        }
+
+        /* Pupil */
+        #pupil {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 35%;
+            height: 35%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%,
+                #1a1a2e 0%,
+                #0a0a15 60%,
+                #000 100%);
+            box-shadow: 
+                inset 0 0 10px rgba(255,255,255,0.1),
+                0 0 10px rgba(0,0,0,0.5);
+            transition: width 0.1s ease, height 0.1s ease;
+        }
+
+        /* Highlight/reflection */
+        #highlight {
+            position: absolute;
+            top: 25%;
+            left: 30%;
+            width: 15%;
+            height: 15%;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            filter: blur(1px);
+        }
+
+        #highlight-small {
+            position: absolute;
+            top: 40%;
+            left: 55%;
+            width: 8%;
+            height: 8%;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            filter: blur(1px);
+        }
+
+        /* Particle container */
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--particle-color);
+            pointer-events: none;
+            animation: particle-float 3s ease-in-out infinite;
+        }
+
+        @keyframes particle-float {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+        }
+
+        /* Audio indicator (hidden by default, shows mic status) */
+        #mic-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.5);
+            color: var(--glow-color);
+            border-radius: 4px;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #mic-indicator.visible {
+            opacity: 1;
+        }
+
+        /* Theme: Violet (default) */
+        :root {
+            --glow-color: #a855f7;
+            --glow-color-dim: rgba(168, 85, 247, 0.3);
+            --energy-color: #c084fc;
+            --particle-color: rgba(168, 85, 247, 0.8);
+            --iris-gradient: radial-gradient(circle at 30% 30%,
+                #c084fc 0%,
+                #a855f7 30%,
+                #7c3aed 60%,
+                #5b21b6 100%);
+        }
+
+        /* Theme: Cyan */
+        body.theme-cyan {
+            --glow-color: #22d3ee;
+            --glow-color-dim: rgba(34, 211, 238, 0.3);
+            --energy-color: #67e8f9;
+            --particle-color: rgba(34, 211, 238, 0.8);
+            --iris-gradient: radial-gradient(circle at 30% 30%,
+                #67e8f9 0%,
+                #22d3ee 30%,
+                #06b6d4 60%,
+                #0891b2 100%);
+        }
+
+        /* Theme: Rose */
+        body.theme-rose {
+            --glow-color: #f472b6;
+            --glow-color-dim: rgba(244, 114, 182, 0.3);
+            --energy-color: #f9a8d4;
+            --particle-color: rgba(244, 114, 182, 0.8);
+            --iris-gradient: radial-gradient(circle at 30% 30%,
+                #f9a8d4 0%,
+                #f472b6 30%,
+                #ec4899 60%,
+                #db2777 100%);
+        }
+
+        /* Theme: Amber */
+        body.theme-amber {
+            --glow-color: #fbbf24;
+            --glow-color-dim: rgba(251, 191, 36, 0.3);
+            --energy-color: #fcd34d;
+            --particle-color: rgba(251, 191, 36, 0.8);
+            --iris-gradient: radial-gradient(circle at 30% 30%,
+                #fcd34d 0%,
+                #fbbf24 30%,
+                #f59e0b 60%,
+                #d97706 100%);
+        }
+
+        /* Theme: Emerald */
+        body.theme-emerald {
+            --glow-color: #34d399;
+            --glow-color-dim: rgba(52, 211, 153, 0.3);
+            --energy-color: #6ee7b7;
+            --particle-color: rgba(52, 211, 153, 0.8);
+            --iris-gradient: radial-gradient(circle at 30% 30%,
+                #6ee7b7 0%,
+                #34d399 30%,
+                #10b981 60%,
+                #059669 100%);
+        }
+
+        /* Reactive states */
+        .audio-spike #pupil {
+            width: 45%;
+            height: 45%;
+        }
+
+        .audio-spike #iris {
+            width: 60%;
+            height: 60%;
+        }
+
+        /* Blink animation */
+        .blinking #sclera,
+        .blinking #iris,
+        .blinking #pupil,
+        .blinking #highlight,
+        .blinking #highlight-small {
+            transform: translate(-50%, -50%) scaleY(0.1);
+            transition: transform 0.1s ease;
+        }
+    </style>
+</head>
+<body class="pos-center size-medium">
+    <div id="iris-container">
+        <div id="iris-eye">
+            <div id="outer-ring"></div>
+            <div id="energy-ring"></div>
+            <div id="particles"></div>
+            <div id="sclera">
+                <div id="iris">
+                    <div id="pupil"></div>
+                </div>
+                <div id="highlight"></div>
+                <div id="highlight-small"></div>
+            </div>
+        </div>
+    </div>
+    <div id="mic-indicator">🎤 Mic Active</div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════
+        // IRIS STREAMING OVERLAY - Configuration & Audio Reactivity
+        // ═══════════════════════════════════════════════════════════
+
+        const themes = ['violet', 'cyan', 'rose', 'amber', 'emerald'];
+        let currentThemeIndex = 0;
+        let audioContext, analyser, microphone, dataArray;
+        let micEnabled = false;
+
+        // Parse URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const position = params.get('pos') || 'center';
+        const size = params.get('size') || 'medium';
+        const theme = params.get('theme') || 'violet';
+        const micParam = params.get('mic');
+
+        // Apply initial settings
+        function applySettings() {
+            document.body.className = `pos-${position} size-${size}`;
+            if (theme !== 'violet') {
+                document.body.classList.add(`theme-${theme}`);
+                currentThemeIndex = themes.indexOf(theme);
+            }
+            if (micParam === 'on') {
+                initAudio();
+            }
+        }
+
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 8;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 6 + 3;
+                const angle = (i / particleCount) * Math.PI * 2;
+                const distance = 45 + Math.random() * 10;
+                
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = `calc(50% + ${Math.cos(angle) * distance}%)`;
+                particle.style.top = `calc(50% + ${Math.sin(angle) * distance}%)`;
+                particle.style.animationDelay = `${Math.random() * 3}s`;
+                particle.style.animationDuration = `${2 + Math.random() * 2}s`;
+                
+                container.appendChild(particle);
+            }
+        }
+
+        // Random blink
+        function randomBlink() {
+            const eye = document.getElementById('iris-eye');
+            eye.classList.add('blinking');
+            setTimeout(() => eye.classList.remove('blinking'), 150);
+            
+            // Schedule next blink (2-6 seconds)
+            setTimeout(randomBlink, 2000 + Math.random() * 4000);
+        }
+
+        // Initialize audio/microphone
+        async function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.8;
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                micEnabled = true;
+                
+                document.getElementById('mic-indicator').classList.add('visible');
+                setTimeout(() => {
+                    document.getElementById('mic-indicator').classList.remove('visible');
+                }, 2000);
+                
+                analyzeAudio();
+            } catch (err) {
+                console.log('Mic access denied:', err);
+            }
+        }
+
+        // Analyze audio levels and react
+        let lastPulseTime = 0;
+        let smoothedLevel = 0;
+
+        function analyzeAudio() {
+            if (!micEnabled) return;
+            
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Calculate average volume
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i];
+            }
+            const average = sum / dataArray.length;
+            
+            // Smooth the level
+            smoothedLevel = smoothedLevel * 0.7 + average * 0.3;
+            
+            const eye = document.getElementById('iris-eye');
+            const pupil = document.getElementById('pupil');
+            const iris = document.getElementById('iris');
+            const energyRing = document.getElementById('energy-ring');
+            
+            // React to audio level
+            if (smoothedLevel > 30) {
+                // Dilate pupil based on volume
+                const dilation = Math.min(smoothedLevel / 100, 0.4);
+                pupil.style.width = `${35 + dilation * 20}%`;
+                pupil.style.height = `${35 + dilation * 20}%`;
+                iris.style.width = `${55 + dilation * 10}%`;
+                iris.style.height = `${55 + dilation * 10}%`;
+                
+                // Pulse energy ring on loud sounds
+                const now = Date.now();
+                if (smoothedLevel > 60 && now - lastPulseTime > 300) {
+                    triggerEnergyPulse();
+                    lastPulseTime = now;
+                }
+            } else {
+                // Return to normal
+                pupil.style.width = '35%';
+                pupil.style.height = '35%';
+                iris.style.width = '55%';
+                iris.style.height = '55%';
+            }
+            
+            requestAnimationFrame(analyzeAudio);
+        }
+
+        // Trigger energy ring pulse
+        function triggerEnergyPulse() {
+            const ring = document.getElementById('energy-ring');
+            ring.classList.remove('energy-pulse');
+            void ring.offsetWidth; // Force reflow
+            ring.classList.add('energy-pulse');
+            
+            // Burst some particles
+            burstParticles();
+        }
+
+        // Particle burst effect
+        function burstParticles() {
+            const container = document.getElementById('iris-container');
+            const rect = container.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.position = 'absolute';
+                particle.style.width = '4px';
+                particle.style.height = '4px';
+                particle.style.left = centerX + 'px';
+                particle.style.top = centerY + 'px';
+                particle.style.animation = 'none';
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 50 + Math.random() * 50;
+                const dx = Math.cos(angle) * distance;
+                const dy = Math.sin(angle) * distance;
+                
+                container.appendChild(particle);
+                
+                // Animate outward
+                particle.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                    { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 500,
+                    easing: 'ease-out'
+                }).onfinish = () => particle.remove();
+            }
+        }
+
+        // Cycle theme
+        function cycleTheme() {
+            // Remove current theme
+            themes.forEach(t => document.body.classList.remove(`theme-${t}`));
+            
+            // Apply next theme
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            if (currentThemeIndex !== 0) { // 0 is violet (default)
+                document.body.classList.add(`theme-${themes[currentThemeIndex]}`);
+            }
+        }
+
+        // Set specific theme
+        function setTheme(index) {
+            themes.forEach(t => document.body.classList.remove(`theme-${t}`));
+            currentThemeIndex = index;
+            if (index !== 0) {
+                document.body.classList.add(`theme-${themes[index]}`);
+            }
+        }
+
+        // Toggle microphone
+        function toggleMic() {
+            if (micEnabled) {
+                micEnabled = false;
+                document.getElementById('mic-indicator').textContent = '🔇 Mic Off';
+                document.getElementById('mic-indicator').classList.add('visible');
+                setTimeout(() => {
+                    document.getElementById('mic-indicator').classList.remove('visible');
+                }, 1500);
+            } else {
+                initAudio();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'r':
+                    location.reload();
+                    break;
+                case 't':
+                    cycleTheme();
+                    break;
+                case 'm':
+                    toggleMic();
+                    break;
+                case '1':
+                    setTheme(0); // Violet
+                    break;
+                case '2':
+                    setTheme(1); // Cyan
+                    break;
+                case '3':
+                    setTheme(2); // Rose
+                    break;
+                case '4':
+                    setTheme(3); // Amber
+                    break;
+                case '5':
+                    setTheme(4); // Emerald
+                    break;
+            }
+        });
+
+        // Initialize
+        applySettings();
+        createParticles();
+        setTimeout(randomBlink, 2000);
+
+        // Log usage info on load
+        console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║  👁️ IRIS STREAMING OVERLAY                                   ║
+╠══════════════════════════════════════════════════════════════╣
+║  Keyboard:  T = theme, M = mic, R = reset, 1-5 = themes      ║
+║  URL Params: pos, size, theme, mic                           ║
+║  Example: ?pos=bottom-right&size=small&theme=cyan&mic=on     ║
+╚══════════════════════════════════════════════════════════════╝
+        `);
+    </script>
+</body>
+</html>
